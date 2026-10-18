@@ -1,0 +1,17 @@
+# Local stack: PostgreSQL + API.  Frontend: `cd frontend && npm install && npm run dev`
+services:
+  db:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: aura, POSTGRES_PASSWORD: aura, POSTGRES_DB: aura }
+    ports: ["5432:5432"]
+    volumes: [aura-pg:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U aura"], interval: 3s, retries: 20 }
+  api:
+    build: { context: ./backend, dockerfile: ../docker/backend.Dockerfile }
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://aura:aura@db:5432/aura
+      AUTO_SEED: "true"
+    ports: ["8000:8000"]
+    depends_on: { db: { condition: service_healthy } }
+volumes: { aura-pg: {} }

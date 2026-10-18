@@ -1,0 +1,31 @@
+# Render Blueprint:  New + > Blueprint > select this repo.
+# After the first deploy, set GROQ_API_KEY and CORS_ORIGINS (your Vercel URL) in the service's Environment tab.
+databases:
+  - name: aura-db
+    databaseName: aura
+    user: aura
+    plan: free            # free Postgres expires after 30 days - use a paid plan (or Supabase) for a real venue
+
+services:
+  - type: web
+    name: aura-api
+    runtime: python
+    rootDir: backend
+    plan: free            # free web services sleep when idle (first request can take ~50 s). Use Starter for a live venue.
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
+    healthCheckPath: /api/health
+    envVars:
+      - { key: PYTHON_VERSION, value: 3.12.8 }
+      - { key: APP_ENV, value: production }
+      - { key: DATABASE_URL, fromDatabase: { name: aura-db, property: connectionString } }
+      - { key: AUTO_CREATE_TABLES, value: "true" }
+      - { key: AUTO_SEED, value: "true" }          # seeds the demo hotel on first boot (no shell on the free plan)
+      - { key: ADMIN_API_KEY, generateValue: true } # find it in the Render dashboard -> Environment
+      - { key: GROQ_API_KEY, sync: false }
+      - { key: GROQ_MODEL, value: openai/gpt-oss-120b }
+      - { key: GROQ_STT_MODEL, value: whisper-large-v3 }
+      - { key: CORS_ORIGINS, sync: false }
+      - { key: TTS_PROVIDER, value: auto }
+      - { key: AZURE_SPEECH_KEY, sync: false }
+      - { key: AZURE_SPEECH_REGION, sync: false }
